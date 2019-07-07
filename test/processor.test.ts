@@ -4,9 +4,9 @@ import {LineProcessor} from '../src/line/processor'
 
 describe('LINE Processor', () => {
   it('should process messages from LINE.', async () => {
-    const processor = new LineProcessor()
+    const line = new LineProcessor()
 
-    processor.ctx.reply = jest.fn(async (tok, msg) => {
+    line.ctx.reply = jest.fn(async (tok, msg) => {
       return msg
     })
 
@@ -22,12 +22,12 @@ describe('LINE Processor', () => {
         type: 'user',
         userId: '',
       },
-      replyToken: '',
+      replyToken: 'www',
     }
 
-    processor.addMessageHandler(e => 'Hello, World!')
+    line.onText(e => 'Hello, World!')
 
-    const [result] = await processor.processAll({
+    const [result] = await line.process({
       destination: 'faux',
       events: [msg],
     })

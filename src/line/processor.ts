@@ -50,7 +50,9 @@ export class LineProcessor {
 
     if (!events) return []
 
-    return Promise.all(events.map(this.processEvent.bind(this)))
+    const tasks = events.map(e => this.processEvent(e))
+
+    return Promise.all(tasks)
   }
 
   on(type: EventType, handler: Function) {
