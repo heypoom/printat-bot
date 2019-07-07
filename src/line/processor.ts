@@ -3,6 +3,7 @@ import {
   MessageEvent,
   Client,
   TextEventMessage,
+  EventMessage,
 } from '@line/bot-sdk'
 
 import chalk from 'chalk'
@@ -11,7 +12,7 @@ import {debug, wtf} from '../utils/logs'
 
 type EventType = 'text'
 
-export type TextHandler = (text: string, ev: MessageEvent) => any
+export type TextHandler = (text: string) => any
 
 interface LineProcessorOptions {
   client?: Client
@@ -23,6 +24,24 @@ interface HandlersMap {
 
 interface ProcessorContext {
   reply: Function
+}
+
+function createReply(replyToken: string, replyFn: Function) {
+  if (!replyToken) throw new Error('missing reply token.')
+
+  return function(data: any) {
+    debug(`Reply: ${chalk.bold(data)}\n`)
+
+    if (typeof data === 'string') {
+      return replyFn(replyToken, {type: 'text', text: data})
+    }
+
+    if (typeof data === 'object') {
+      return replyFn(replyToken, data)
+    }
+
+    throw new Error('unimplemented.')
+  }
 }
 
 export class LineProcessor {
@@ -66,17 +85,13 @@ export class LineProcessor {
     this.handlers.text.push(handler)
   }
 
-  processEvent(event: any) {
+  async processEvent(event: any) {
     const {type, message} = event
 
-    if (type === 'message' && message.type === 'text') {
-      return this.processTextEvent(event)
-    }
-
     if (type === 'message') {
-      debug('Unhandled Message >>', message)
+      const result = await this.processMessage(message)
 
-      return '...?'
+      return this.reply(result, event.replyToken)
     }
 
     debug('Unhandled Event >>', event)
@@ -84,36 +99,42 @@ export class LineProcessor {
     return null
   }
 
-  reply(data: any, replyToken: string) {
-    const {reply} = this.ctx
+  async processMessage(message: EventMessage) {
+    const {type} = message
 
-    if (!replyToken) throw new Error('missing reply token.')
+    switch (type) {
+      case 'text':
+        return this.processTextEvent(message as TextEventMessage)
 
-    debug(`Reply: ${chalk.bold(data)}\n`)
+      case 'sticker':
+        return 'Cool Stickers!'
 
-    if (typeof data === 'string') {
-      return reply(replyToken, {type: 'text', text: data})
+      case 'image':
+        return 'Cool Image!'
+
+      default:
+        debug('Unhandled Message >>', type, message)
+
+        return `I don't understand ${type} yet. Sorry...`
     }
-
-    if (typeof data === 'object') {
-      return reply(replyToken, data)
-    }
-
-    throw new Error('unimplemented.')
   }
 
-  async processTextEvent(e: MessageEvent) {
-    const {message} = e
-    const {text} = message as TextEventMessage
+  reply(data: any, replyToken: string) {
+    const reply = createReply(replyToken, this.ctx.reply)
 
-    if (message.type !== 'text') return
+    reply(data)
+  }
+
+  async processTextEvent(message: TextEventMessage) {
+    const {type, text} = message
+    if (type !== 'text') return
 
     debug(`Message: ${chalk.bold(text)}`)
 
     for (let handler of this.handlers.text) {
-      const data = handler(text, e)
+      const data = handler(text)
 
-      if (data) return this.reply(data, e.replyToken)
+      if (data) return data
     }
   }
 }
