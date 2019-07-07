@@ -5,10 +5,7 @@ import {LineProcessor} from '../src/line/processor'
 describe('LINE Processor', () => {
   it('should process messages from LINE.', async () => {
     const line = new LineProcessor()
-
-    line.ctx.reply = jest.fn(async (tok, msg) => {
-      return msg
-    })
+    line.ctx.reply = (_, msg) => msg
 
     const msg: MessageEvent = {
       type: 'message',
@@ -25,7 +22,7 @@ describe('LINE Processor', () => {
       replyToken: 'www',
     }
 
-    line.onText(e => 'Hello, World!')
+    line.onText(() => 'Hello, World!')
 
     const [result] = await line.process({
       destination: 'faux',
