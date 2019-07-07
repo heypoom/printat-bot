@@ -12,11 +12,11 @@ import chalk from 'chalk'
 
 import {debug, wtf} from '../utils/logs'
 import {createReply} from './createReply'
+import {TextHandler} from 'bot/types'
 
 type EventType = EventMessage['type']
 
 type BaseEvent = ReplyableEvent & {type: string} & WebhookEvent
-export type TextHandler = (text: string) => any
 
 interface LineProcessorOptions {
   client?: Client
@@ -77,10 +77,9 @@ export class LineProcessor {
   async processEvent(event: BaseEvent) {
     const {type, replyToken} = event
 
-    debug('Event =', event)
-
     if (type === 'message') {
-      const result = await this.processMessage(event.message)
+      const {message} = event as MessageEvent
+      const result = await this.processMessage(message)
 
       return this.reply(result, replyToken)
     }

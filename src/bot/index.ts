@@ -1,9 +1,8 @@
-import chalk from 'chalk'
 import {Client} from '@line/bot-sdk'
 
-import {debug} from '../utils/logs'
-import {LineProcessor} from '../line/processor'
 import {createMatchHandler} from './createMatchHandler'
+import {TextHandler} from './types'
+import {LineProcessor} from 'line/processor'
 
 interface BotConfig {
   lineClient?: Client
@@ -24,8 +23,6 @@ export function matchAll(regex: RegExp, text: string): string[] {
 
   return m.slice(1)
 }
-
-type TextHandler = (text: string, ...args: any[]) => string | undefined
 
 export class Bot {
   line: LineProcessor
