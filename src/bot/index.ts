@@ -12,7 +12,7 @@ export function matchFirst(regex: RegExp, text: string): string {
   const m = regex.exec(text)
   if (!m) return ''
 
-  return m[1]
+  return m[1] || m[0]
 }
 
 export function matchAll(regex: RegExp, text: string): string[] {
@@ -26,7 +26,7 @@ export const createMatchHandler = (matcher: Matcher, callback: Function) => (
   text: string,
   ...args: any[]
 ) => {
-  const reply = () => callback(text, ...args)
+  const reply = (res = text) => callback(res, ...args)
 
   if (typeof matcher === 'string' && text.includes(matcher)) {
     return reply()
@@ -34,7 +34,7 @@ export const createMatchHandler = (matcher: Matcher, callback: Function) => (
 
   if (matcher instanceof RegExp) {
     const m = matchFirst(matcher, text)
-    if (m) return reply()
+    if (m) return reply(m)
   }
 }
 
