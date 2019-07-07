@@ -73,6 +73,14 @@ export class LineProcessor {
       return this.processTextEvent(event)
     }
 
+    if (type === 'message') {
+      debug('Unhandled Message >>', message)
+
+      return '...?'
+    }
+
+    debug('Unhandled Event >>', event)
+
     return null
   }
 
