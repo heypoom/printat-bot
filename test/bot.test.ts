@@ -6,7 +6,6 @@ describe('Bot Engine', () => {
     bot.command('print', () => 'Printing...')
 
     expect(bot.exec('/print')).toBe('Printing...')
-    expect(bot.exec('print')).toBe('Printing...')
 
     expect(bot.exec('$print')).toBeFalsy()
     expect(bot.exec('Hello /print')).toBeFalsy()
