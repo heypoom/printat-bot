@@ -1,10 +1,8 @@
+import chalk from 'chalk'
 import {Client} from '@line/bot-sdk'
 
-import {LineProcessor} from '../line/processor'
-import {interpret, Interpreter, DefaultContext, EventObject} from 'xstate'
-import {BotMachine} from './machine'
 import {debug} from '../utils/logs'
-import chalk from 'chalk'
+import {LineProcessor} from '../line/processor'
 
 interface BotConfig {
   lineClient?: Client
@@ -48,34 +46,8 @@ export class Bot {
   line: LineProcessor
   handlers: TextHandler[] = []
 
-  service: Interpreter<DefaultContext, any, EventObject>
-
   constructor(config: BotConfig = {}) {
     this.line = new LineProcessor({client: config.lineClient})
-
-    this.service = interpret(BotMachine).onTransition(this.onTransition)
-    this.service.start()
-
-    this.command('ask', () => {
-      this.service.send('ASK')
-
-      return 'Please Answer.'
-    })
-
-    this.command('answer', () => {
-      this.service.send('GOT_ANSWER')
-
-      return 'Good.'
-    })
-
-    // Declare the state override here.
-    this.onText(() => {
-      const {value} = this.service.state
-
-      if (value === 'asking') {
-        return 'You are being asked a question.'
-      }
-    })
   }
 
   private onTransition(state: any) {
