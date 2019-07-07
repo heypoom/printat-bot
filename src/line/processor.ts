@@ -4,23 +4,24 @@ import {
   Client,
   TextEventMessage,
   EventMessage,
+  ReplyableEvent,
+  WebhookEvent,
 } from '@line/bot-sdk'
 
 import chalk from 'chalk'
 
 import {debug, wtf} from '../utils/logs'
 
-type EventType = 'text'
+type EventType = EventMessage['type']
 
+type BaseEvent = ReplyableEvent & {type: string} & WebhookEvent
 export type TextHandler = (text: string) => any
 
 interface LineProcessorOptions {
   client?: Client
 }
 
-interface HandlersMap {
-  text: TextHandler[]
-}
+type HandlersMap = Record<EventType, Function[]>
 
 interface ProcessorContext {
   reply: Function
@@ -44,14 +45,20 @@ function createReply(replyToken: string, replyFn: Function) {
   }
 }
 
+const defaultHandlers: HandlersMap = {
+  text: [],
+  image: [],
+  video: [],
+  audio: [],
+  location: [],
+  file: [],
+  sticker: [],
+}
+
 export class LineProcessor {
   client?: Client
-
   ctx: ProcessorContext
-
-  handlers: HandlersMap = {
-    text: [],
-  }
+  handlers: HandlersMap = defaultHandlers
 
   constructor(options: LineProcessorOptions = {}) {
     const {client} = options
@@ -75,23 +82,22 @@ export class LineProcessor {
   }
 
   on(type: EventType, handler: Function) {
-    const maps = {text: this.onText}
-    const fn = maps[type]
+    if (!this.handlers[type]) this.handlers[type] = []
 
-    if (fn) fn(handler)
+    this.handlers[type].push(handler)
   }
 
   onText(handler: TextHandler) {
-    this.handlers.text.push(handler)
+    this.on('text', handler)
   }
 
-  async processEvent(event: any) {
-    const {type, message} = event
+  async processEvent(event: BaseEvent) {
+    const {type, replyToken} = event
 
     if (type === 'message') {
-      const result = await this.processMessage(message)
+      const result = await this.processMessage(event.message)
 
-      return this.reply(result, event.replyToken)
+      return this.reply(result, replyToken)
     }
 
     debug('Unhandled Event >>', event)
