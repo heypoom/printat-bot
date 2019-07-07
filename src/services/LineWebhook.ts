@@ -1,7 +1,7 @@
 import {Application} from '@feathersjs/feathers'
 import {WebhookRequestBody} from '@line/bot-sdk'
 
-import {setupBot} from 'bot'
+import {setupBot} from 'setup-bot'
 import {validateWebhookSignature} from 'line/validate-signature'
 
 const bot = setupBot()
