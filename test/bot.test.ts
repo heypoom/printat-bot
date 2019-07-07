@@ -24,7 +24,7 @@ describe('Bot Engine', () => {
 
   it('should handle regex capture groups', () => {
     const bot = new Bot()
-    bot.match(/\pay (\d+)/, m => `Pay me ${m} by today.`)
+    bot.match(/\pay (\d+)/, (amt: string) => `Pay me ${amt} by today.`)
 
     expect(bot.exec('/pay 500')).toBe('Pay me 500 by today.')
   })

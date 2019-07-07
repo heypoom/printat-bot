@@ -13,6 +13,8 @@ export function setupBot() {
     return `The current time is ${date.getHours()}:${date.getMinutes()}`
   })
 
+  bot.match(/\pay (\d+)/, (amount: string) => `Pay me ${amount} by today.`)
+
   bot.onText(text => `You said: ${text}`)
 
   return bot
