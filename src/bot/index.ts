@@ -3,12 +3,13 @@ import {Client} from '@line/bot-sdk'
 
 import {debug} from '../utils/logs'
 import {LineProcessor} from '../line/processor'
+import {createMatchHandler} from './createMatchHandler'
 
 interface BotConfig {
   lineClient?: Client
 }
 
-type Matcher = string | RegExp
+export type Matcher = string | RegExp
 
 export function matchFirst(regex: RegExp, text: string): string {
   const m = regex.exec(text)
@@ -24,22 +25,6 @@ export function matchAll(regex: RegExp, text: string): string[] {
   return m.slice(1)
 }
 
-export const createMatchHandler = (matcher: Matcher, callback: Function) => (
-  text: string,
-  ...args: any[]
-) => {
-  const reply = (res = text) => callback(res, ...args)
-
-  if (typeof matcher === 'string' && text.includes(matcher)) {
-    return reply()
-  }
-
-  if (matcher instanceof RegExp) {
-    const m = matchFirst(matcher, text)
-    if (m) return reply(m)
-  }
-}
-
 type TextHandler = (text: string, ...args: any[]) => string | undefined
 
 export class Bot {
@@ -48,10 +33,6 @@ export class Bot {
 
   constructor(config: BotConfig = {}) {
     this.line = new LineProcessor({client: config.lineClient})
-  }
-
-  private onTransition(state: any) {
-    debug(`>> State = ${chalk.bold(state.value)}`)
   }
 
   match(matcher: Matcher, callback: Function) {

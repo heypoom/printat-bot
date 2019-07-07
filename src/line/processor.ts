@@ -11,6 +11,7 @@ import {
 import chalk from 'chalk'
 
 import {debug, wtf} from '../utils/logs'
+import {createReply} from './createReply'
 
 type EventType = EventMessage['type']
 
@@ -25,24 +26,6 @@ type HandlersMap = Record<EventType, Function[]>
 
 interface ProcessorContext {
   reply: Function
-}
-
-function createReply(replyToken: string, replyFn: Function) {
-  if (!replyToken) throw new Error('missing reply token.')
-
-  return function(data: any) {
-    debug(`Reply: ${chalk.bold(data)}\n`)
-
-    if (typeof data === 'string') {
-      return replyFn(replyToken, {type: 'text', text: data})
-    }
-
-    if (typeof data === 'object') {
-      return replyFn(replyToken, data)
-    }
-
-    throw new Error('unimplemented.')
-  }
 }
 
 const defaultHandlers: HandlersMap = {
@@ -93,6 +76,8 @@ export class LineProcessor {
 
   async processEvent(event: BaseEvent) {
     const {type, replyToken} = event
+
+    debug('Event =', event)
 
     if (type === 'message') {
       const result = await this.processMessage(event.message)
