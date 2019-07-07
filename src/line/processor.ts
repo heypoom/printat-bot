@@ -5,7 +5,9 @@ import {
   TextEventMessage,
 } from '@line/bot-sdk'
 
-import {debug, wtf, info} from '../utils/logs'
+import chalk from 'chalk'
+
+import {debug, wtf} from '../utils/logs'
 
 type EventType = 'text'
 
@@ -77,7 +79,7 @@ export class LineProcessor {
 
     if (!replyToken) throw new Error('missing reply token.')
 
-    info(`Reply: ${data}`)
+    debug(`Reply: ${chalk.bold(data)}\n`)
 
     if (typeof data === 'string') {
       return reply(replyToken, {type: 'text', text: data})
@@ -96,7 +98,7 @@ export class LineProcessor {
 
     if (message.type !== 'text') return
 
-    info(`Incoming: ${text}`)
+    debug(`Message: ${chalk.bold(text)}`)
 
     for (let handler of this.handlers.text) {
       const data = handler(text, e)

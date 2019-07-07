@@ -30,7 +30,7 @@ export const createMatchHandler = (matcher: Matcher, callback: Function) => (
 ) => {
   const reply = () => callback(text, ...args)
 
-  if (typeof matcher === 'string' && text.startsWith(matcher)) {
+  if (typeof matcher === 'string' && text.includes(matcher)) {
     return reply()
   }
 
@@ -50,7 +50,13 @@ export class Bot {
   match(matcher: Matcher, callback: Function) {
     const handler = createMatchHandler(matcher, callback)
 
-    this.line.onText(handler)
+    this.onText(handler)
+  }
+
+  command(name: string, callback: Function) {
+    const pattern = new RegExp(`^/?(${name})`)
+
+    this.match(pattern, callback)
   }
 
   onText(fn: TextHandler) {
