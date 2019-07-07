@@ -1,82 +1,107 @@
 import {
   WebhookRequestBody,
   MessageEvent,
-  ReplyableEvent,
-  WebhookEvent,
   Client,
+  TextEventMessage,
 } from '@line/bot-sdk'
 
-import {debug, wtf} from '../utils/logs'
+import {debug, wtf, info} from '../utils/logs'
 
-type BaseEvent = ReplyableEvent & {type: string} & WebhookEvent
+type EventType = 'text'
 
-export type WebhookHandler<T> = (event: T, destination: string) => any
-export type MessageHandler = WebhookHandler<MessageEvent>
+export type TextHandler = (text: string, ev: MessageEvent) => any
 
 interface LineProcessorOptions {
   client?: Client
 }
 
+interface HandlersMap {
+  text: TextHandler[]
+}
+
+interface ProcessorContext {
+  reply: Function
+}
+
 export class LineProcessor {
   client?: Client
-  ctx: {reply: Client['replyMessage']} = {reply: () => {}}
-  messageHandlers: MessageHandler[] = []
+
+  ctx: ProcessorContext
+
+  handlers: HandlersMap = {
+    text: [],
+  }
 
   constructor(options: LineProcessorOptions = {}) {
     const {client} = options
+    this.client = client
 
-    if (!client) {
-      wtf('A LINE client instance is required!')
-    }
+    if (!client) wtf('A LINE client instance is required!')
 
-    if (client) {
-      this.client = client
-      this.ctx = {reply: (...args) => client.replyMessage(...args)}
+    this.ctx = {
+      reply: (...args) => client && client.replyMessage(...args),
     }
   }
 
-  addMessageHandler(handler: MessageHandler) {
-    this.messageHandlers.push(handler)
+  async process(payload: WebhookRequestBody) {
+    const {events} = payload
+
+    if (!events) return []
+
+    return Promise.all(events.map(this.processEvent.bind(this)))
   }
 
-  process(event: any, uid: string) {
+  on(type: EventType, handler: Function) {
+    const maps = {text: this.onText}
+    const fn = maps[type]
+
+    if (fn) fn(handler)
+  }
+
+  onText(handler: TextHandler) {
+    this.handlers.text.push(handler)
+  }
+
+  processEvent(event: any) {
     const {type, message} = event
 
     if (type === 'message' && message.type === 'text') {
-      return this.processMessageEvent(event, uid)
+      return this.processTextEvent(event)
     }
 
     return null
   }
 
-  async processMessageEvent(e: MessageEvent, uid: string) {
+  reply(data: any, replyToken: string) {
     const {reply} = this.ctx
-    const result = this.processEvent(e, uid, this.messageHandlers)
 
-    if (typeof result === 'string') {
-      return reply(e.replyToken, {type: 'text', text: result})
+    if (!replyToken) throw new Error('missing reply token.')
+
+    info(`Reply: ${data}`)
+
+    if (typeof data === 'string') {
+      return reply(replyToken, {type: 'text', text: data})
     }
+
+    if (typeof data === 'object') {
+      return reply(replyToken, data)
+    }
+
+    throw new Error('unimplemented.')
   }
 
-  async processAll(payload: WebhookRequestBody) {
-    const {events, destination} = payload
+  async processTextEvent(e: MessageEvent) {
+    const {message} = e
+    const {text} = message as TextEventMessage
 
-    debug('Events >>', payload)
+    if (message.type !== 'text') return
 
-    if (!events) return []
+    info(`Incoming: ${text}`)
 
-    return Promise.all(events.map(e => this.process(e, destination)))
-  }
+    for (let handler of this.handlers.text) {
+      const data = handler(text, e)
 
-  processEvent<T extends BaseEvent>(
-    event: T,
-    uid: string,
-    handlers: WebhookHandler<T>[],
-  ) {
-    for (let handler of handlers) {
-      const result = handler(event, uid)
-
-      if (result) return result
+      if (data) return this.reply(data, e.replyToken)
     }
   }
 }
