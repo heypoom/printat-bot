@@ -21,7 +21,7 @@ export function createReply(replyToken: string, replyFn: Function) {
   return async function(data: any) {
     try {
       debug(`Reply: ${chalk.bold(data)}\n`)
-      debug(`Reply Token: ${replyToken}`)
+      // debug(`Reply Token: ${replyToken}`)
 
       if (typeof data === 'string') {
         return await replyFn(replyToken, {type: 'text', text: data})
@@ -47,7 +47,7 @@ export function createReply(replyToken: string, replyFn: Function) {
           return true
         }
 
-        wtf(`Cannot Reply: HTTP ${statusCode} (${statusMessage}):`, message)
+        wtf(`Cannot Reply: HTTP ${statusCode} (${statusMessage}):`, errorData)
         return false
       }
 

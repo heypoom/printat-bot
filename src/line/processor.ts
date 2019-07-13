@@ -6,6 +6,7 @@ import {
   EventMessage,
   ReplyableEvent,
   WebhookEvent,
+  ImageEventMessage,
 } from '@line/bot-sdk'
 
 import chalk from 'chalk'
@@ -15,15 +16,15 @@ import {createReply} from './createReply'
 import {TextHandler} from 'bot/types'
 import {BotContext, createContext} from 'bot/context'
 
-type EventType = EventMessage['type']
-type BaseEvent = ReplyableEvent & {type: string} & WebhookEvent
+export type EventType = EventMessage['type']
+export type BaseEvent = ReplyableEvent & {type: string} & WebhookEvent
 
 interface LineProcessorOptions {
   client?: Client
 }
 
-type HandlerFunc = (item: any, context: BotContext) => any
-type HandlersMap = Record<EventType, HandlerFunc[]>
+export type HandlerFunc = (item: any, context: BotContext) => any
+export type HandlersMap = Record<EventType, HandlerFunc[]>
 
 interface ProcessorContext {
   reply: Function
@@ -51,7 +52,7 @@ export class LineProcessor {
     if (!client) wtf('A LINE client instance is required!')
 
     this.ctx = {
-      reply: (...args) => client && client.replyMessage(...args),
+      reply: (...args: any[]) => client && client.replyMessage(...args),
     }
   }
 
@@ -109,13 +110,19 @@ export class LineProcessor {
         return 'Cool Stickers!'
 
       case 'image':
-        return 'Cool Image!'
+        return this.processImageEvent(message as ImageEventMessage, context)
 
       default:
         debug('Unhandled Message >>', type, message)
 
         return `I don't understand ${type} yet. Sorry...`
     }
+  }
+
+  processImageEvent(message: ImageEventMessage, context: BotContext) {
+    console.log('> Image Event:', message)
+
+    return `Cool Image! (debug: ${message.id})`
   }
 
   reply(data: any, replyToken: string) {
@@ -125,8 +132,7 @@ export class LineProcessor {
   }
 
   async processTextEvent(message: TextEventMessage, context: BotContext) {
-    const {type, text} = message
-    if (type !== 'text') return
+    const {text} = message
 
     debug(`Message: ${chalk.bold(text)}`)
 

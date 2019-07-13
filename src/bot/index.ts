@@ -2,7 +2,8 @@ import {Client} from '@line/bot-sdk'
 
 import {createMatchHandler} from './createMatchHandler'
 import {TextHandler} from './types'
-import {LineProcessor} from 'line/processor'
+
+import {LineProcessor, EventType, HandlerFunc} from 'line/processor'
 
 interface BotConfig {
   lineClient?: Client
@@ -42,6 +43,10 @@ export class Bot {
     const pattern = new RegExp(`^/(${name})`)
 
     this.match(pattern, callback)
+  }
+
+  on(event: EventType, handler: HandlerFunc) {
+    this.line.on(event, handler)
   }
 
   onText(fn: TextHandler) {

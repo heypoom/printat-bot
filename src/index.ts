@@ -27,7 +27,12 @@ app.use(hooksProvider)
 const IndexRoute = async (_req: Request, res: Response) =>
   res.send({status: 'OK!'})
 
+const LIFFApp = async (req: Request, res: Response) => {
+  return res.send('<h1>Hello!</h1>')
+}
+
 app.get('/', IndexRoute)
+app.get('/app', LIFFApp)
 app.configure(LineWebhook)
 
 // Set up an error handler that gives us nicer errors
