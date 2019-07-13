@@ -10,6 +10,8 @@ export function validateWebhookSignature(ctx) {
   if (!signature) {
     ctx.result = 'missing LINE webhook signature!'
     ctx.statusCode = 200
+
+    return
   }
 
   const body = JSON.stringify(ctx.data)
