@@ -13,16 +13,17 @@ import chalk from 'chalk'
 import {debug, wtf} from '../utils/logs'
 import {createReply} from './createReply'
 import {TextHandler} from 'bot/types'
+import {BotContext, createContext} from 'bot/context'
 
 type EventType = EventMessage['type']
-
 type BaseEvent = ReplyableEvent & {type: string} & WebhookEvent
 
 interface LineProcessorOptions {
   client?: Client
 }
 
-type HandlersMap = Record<EventType, Function[]>
+type HandlerFunc = (item: any, context: BotContext) => any
+type HandlersMap = Record<EventType, HandlerFunc[]>
 
 interface ProcessorContext {
   reply: Function
@@ -64,7 +65,7 @@ export class LineProcessor {
     return Promise.all(tasks)
   }
 
-  on(type: EventType, handler: Function) {
+  on(type: EventType, handler: HandlerFunc) {
     if (!this.handlers[type]) this.handlers[type] = []
 
     this.handlers[type].push(handler)
@@ -75,11 +76,19 @@ export class LineProcessor {
   }
 
   async processEvent(event: BaseEvent) {
-    const {type, replyToken} = event
+    const {type, replyToken, source, timestamp} = event
+    const {userId} = source
+
+    const context = createContext({
+      replyToken,
+      userId,
+      timestamp,
+      source: source.type,
+    })
 
     if (type === 'message') {
       const {message} = event as MessageEvent
-      const result = await this.processMessage(message)
+      const result = await this.processMessage(message, context)
 
       return this.reply(result, replyToken)
     }
@@ -89,12 +98,12 @@ export class LineProcessor {
     return null
   }
 
-  async processMessage(message: EventMessage) {
+  async processMessage(message: EventMessage, context: BotContext) {
     const {type} = message
 
     switch (type) {
       case 'text':
-        return this.processTextEvent(message as TextEventMessage)
+        return this.processTextEvent(message as TextEventMessage, context)
 
       case 'sticker':
         return 'Cool Stickers!'
@@ -115,14 +124,14 @@ export class LineProcessor {
     reply(data)
   }
 
-  async processTextEvent(message: TextEventMessage) {
+  async processTextEvent(message: TextEventMessage, context: BotContext) {
     const {type, text} = message
     if (type !== 'text') return
 
     debug(`Message: ${chalk.bold(text)}`)
 
     for (let handler of this.handlers.text) {
-      const data = handler(text)
+      const data = handler(text, context)
 
       if (data) return data
     }

@@ -1,15 +1,18 @@
 import {createReply} from 'line/createReply'
 import {lineClient} from 'line'
-import {Message, Client} from '@line/bot-sdk'
-
-export interface BotContext {
-  send?: (data: string | Message) => void
-  reply?: (data: string | Message) => void
-}
+import {Message, Client, EventSource} from '@line/bot-sdk'
 
 interface CreateContextOptions {
   replyToken?: string
+  userId?: string
+  timestamp?: number
+  source?: EventSource['type']
 }
+
+export type BotContext = {
+  send?: (data: string | Message) => void
+  reply?: (data: string | Message) => void
+} & CreateContextOptions
 
 interface IO {
   push: Client['pushMessage']
@@ -25,9 +28,9 @@ export function createContext(
   options: CreateContextOptions,
   io: IO = defaultIO,
 ): BotContext {
-  const {replyToken = ''} = options
+  const {replyToken = '', userId} = options
 
   const reply = createReply(replyToken, io.reply)
 
-  return {reply}
+  return {reply, userId}
 }
