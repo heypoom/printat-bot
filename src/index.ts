@@ -33,7 +33,7 @@ app.configure(LineWebhook)
 // Set up an error handler that gives us nicer errors
 const errorHandler = express.errorHandler({
   json(error: FeathersError, _req: Request, res: Response, next: Function) {
-    wtf('Fatal Error!', error.code, error.name, error.message)
+    wtf(`HTTP Error ${error.code} (${error.name}):`, error.message)
 
     res.sendStatus(error.code)
     next()

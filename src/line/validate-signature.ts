@@ -1,4 +1,3 @@
-import errors from '@feathersjs/errors'
 import {validateSignature} from '@line/bot-sdk'
 
 const {CHANNEL_SECRET = ''} = process.env
@@ -9,13 +8,15 @@ export function validateWebhookSignature(ctx) {
   const signature = headers['x-line-signature'] as string
 
   if (!signature) {
-    throw new errors.BadRequest('missing LINE webhook signature!')
+    ctx.result = 'missing LINE webhook signature!'
+    ctx.statusCode = 200
   }
 
   const body = JSON.stringify(ctx.data)
   const isValidated = validateSignature(body, CHANNEL_SECRET, signature)
 
   if (!isValidated) {
-    throw new errors.BadRequest('invalid LINE webhook signature!')
+    ctx.result = 'invalid LINE webhook signature!'
+    ctx.statusCode = 200
   }
 }
